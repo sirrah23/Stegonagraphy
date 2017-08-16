@@ -61,25 +61,30 @@ def hide(imagefile, message):
     write_image(img_mode, img_size, res_img_bytes, "./test.png")
     print(str(len(msg_bytes)) + " bytes written successfully to " + "./test.png")
 
-def build_hidden_data(source_bytes, bytes_in_secret):
+def build_hidden_data(source_bytes):
     res = ""
-    for i in range(bytes_in_secret):
+    i = 0
+    while i < len(source_bytes) // BITS_PER_BYTE:
         curr_bytes = get_ith_window(i, BITS_PER_BYTE, source_bytes)
-        res += chr(int(''.join(list(map(lambda b: str(get_lsb(b)), curr_bytes))),2))
+        curr_msg_byte = chr(int(''.join(list(map(lambda b: str(get_lsb(b)), curr_bytes))),2))
+        if curr_msg_byte != '\x00': res += curr_msg_byte
+        i += 1
     return res
 
-def reveal(imagefile, bytes_in_secret):
+def reveal(imagefile):
     _, _, img_bytes = read_image(imagefile)
-    res = build_hidden_data(img_bytes, bytes_in_secret)
+    res = build_hidden_data(img_bytes)
     print(res)
 
+# TODO: Improve command line argument gathering
 action = sys.argv[1]
 input_file = sys.argv[2]
-input_param = sys.argv[3]
+if action == "hide":
+    input_param = sys.argv[3]
 if action == "hide":
     hide(input_file, input_param)
 elif action == "reveal":
-    reveal(input_file, int(input_param))
+    reveal(input_file)
 else:
    print("Invalid operation " + action) 
    sys.exit(1)
