@@ -14,23 +14,31 @@ def zero_lsb(bytestream):
 def str_to_bytes(s):
     return s.encode()
 
+def bytes_to_bits_gen(bytestream):
+    bits_per_byte = 8
+    first_bit_mask = int('0b10000000',2)
+    for b in bytestream:
+        for _ in range(bits_per_byte):
+            yield (b & first_bit_mask) >> (bits_per_byte-1)
+            b <<= 1
+
 def byte_to_bitarray(i):
     return list(map(int, list("{:08b}".format(i))))
 
 def hide_msg_in_img(img_bytes, msg_bytes):
     res_img_bytes = [0] * len(img_bytes)
+    msg_bit_rcv = bytes_to_bits_gen(msg_bytes)
     i = 0
-    for mb in msg_bytes:
-        mb_bitarr = byte_to_bitarray(mb)
-        j = 0
-        while i < len(img_bytes) and j < 8:
-            res_img_bytes[i] = img_bytes[i] + mb_bitarr[j]
-            i += 1
-            j += 1
+    # TODO: Refactor this
     while i < len(img_bytes):
-        #TODO: slice?
-        res_img_bytes[i] = img_bytes[i]
+        try:
+            next_msg_bit = next(msg_bit_rcv)
+            print(next_msg_bit)
+        except StopIteration:
+            break
+        res_img_bytes[i] = img_bytes[i] + next_msg_bit
         i += 1
+    res_img_bytes[i:] = img_bytes[i:]
     return bytes(res_img_bytes)
 
 def write_image(img_mode, img_size, img_bytes, output):
@@ -56,4 +64,3 @@ input_file = sys.argv[1]
 message = sys.argv[2]
 hide(input_file, message)
 sys.exit(0)
-
