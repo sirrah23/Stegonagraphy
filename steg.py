@@ -106,7 +106,7 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(dest="action")
     # Create a subparser for the hide command
     parser_hide = subparsers.add_parser('hide', help='Hide a message within an image')
-    parser_hide.add_argument('filename', type=str, help='File to hide image in')
+    parser_hide.add_argument('filename', type=str, help='File to hide message in')
     parser_hide.add_argument('output_file', type=str, help='Name of output file containing message')
     parser_hide.add_argument('secret', type=str, help='Secret message to hide')
     # Create a subparser for the reveal command
