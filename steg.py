@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from PIL import Image
-import sys
+import sys, argparse
 
 BITS_PER_BYTE = 8
 
@@ -36,7 +36,6 @@ def hide_msg_in_img(img_bytes, msg_bytes):
     res_img_bytes = [0] * len(img_bytes)
     msg_bit_rcv = bytes_to_bits_gen(msg_bytes)
     i = 0
-    # TODO: Refactor this
     while i < len(img_bytes):
         try:
             next_msg_bit = next(msg_bit_rcv)
@@ -50,7 +49,7 @@ def hide_msg_in_img(img_bytes, msg_bytes):
 def write_image(img_mode, img_size, img_bytes, output):
     Image.frombytes(img_mode, img_size, img_bytes).save(output)
 
-def hide(imagefile, message):
+def hide(imagefile, message, output_imagefile):
     img_mode, img_size, img_bytes = read_image(imagefile) 
     msg_bytes = str_to_bytes(message)
     if len(msg_bytes)*BITS_PER_BYTE > len(img_bytes):
@@ -58,8 +57,8 @@ def hide(imagefile, message):
         sys.exit(1)
     zero_lsb_bytes = zero_lsb(img_bytes)
     res_img_bytes = hide_msg_in_img(zero_lsb_bytes, msg_bytes)
-    write_image(img_mode, img_size, res_img_bytes, "./test.png")
-    print(str(len(msg_bytes)) + " bytes written successfully to " + "./test.png")
+    write_image(img_mode, img_size, res_img_bytes, output_imagefile)
+    print(str(len(msg_bytes)) + " bytes written successfully to " + output_imagefile)
 
 def build_hidden_data(source_bytes):
     res = ""
@@ -76,16 +75,24 @@ def reveal(imagefile):
     res = build_hidden_data(img_bytes)
     print(res)
 
-# TODO: Improve command line argument gathering
-action = sys.argv[1]
-input_file = sys.argv[2]
-if action == "hide":
-    input_param = sys.argv[3]
-if action == "hide":
-    hide(input_file, input_param)
-elif action == "reveal":
-    reveal(input_file)
-else:
-   print("Invalid operation " + action) 
-   sys.exit(1)
-sys.exit(0)
+if __name__ == '__main__':
+    # Command line argument parser
+    parser = argparse.ArgumentParser(description='Hide secrets in plain sight', prog="steg.py")
+    subparsers = parser.add_subparsers(dest="action")
+    # Create a subparser for the hide command
+    parser_hide = subparsers.add_parser('hide', help='Hide a message within an image')
+    parser_hide.add_argument('filename', type=str, help='File to hide image in')
+    parser_hide.add_argument('output_file', type=str, help='Name of output file containing message')
+    parser_hide.add_argument('secret', type=str, help='Secret message to hide')
+    # Create a subparser for the reveal command
+    parser_reveal = subparsers.add_parser('reveal', help='Reveal message hidden within an image')
+    #TODO: Add optional byte size for secret message to read out
+    parser_reveal.add_argument('filename', type=str, help='File to search for message')
+    # Get the arguments!
+    args = parser.parse_args()
+    # Run command
+    if args.action == "hide":
+        hide(args.filename, args.secret, args.output_file)
+    elif args.action == "reveal":
+        reveal(args.filename)
+    sys.exit(0)
